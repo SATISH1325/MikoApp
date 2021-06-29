@@ -1,13 +1,17 @@
 package com.professional.mikoapp.viewModel;
 
+import android.app.Application;
 import android.util.Log;
-import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.professional.mikoapp.model.DataModel;
 import com.professional.mikoapp.network.APIClient;
+import com.professional.mikoapp.repository.Miko;
+import com.professional.mikoapp.repository.MikoRepository;
 
 import java.util.List;
 
@@ -15,12 +19,23 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivityViewModel extends ViewModel {
+public class MainActivityViewModel extends AndroidViewModel {
 
     private static final String TAG = MainActivityViewModel.class.getSimpleName();
 
-    public MutableLiveData<List<DataModel.Record>> recordMutableLiveData = new MutableLiveData<>();
+    public MutableLiveData<List<Miko>> recordMutableLiveData = new MutableLiveData<>();
     public MutableLiveData<String> recordMutableLiveDataFailureResponse = new MutableLiveData<>();
+
+    private LiveData<List<Miko>> allRecords;
+
+    private MikoRepository mikoRepository;
+
+    public MainActivityViewModel(@NonNull Application application) {
+        super(application);
+        mikoRepository = new MikoRepository(application);
+        allRecords = mikoRepository.getAllRecords();
+
+    }
 
     public void loadData() {
         try {
@@ -33,7 +48,28 @@ public class MainActivityViewModel extends ViewModel {
                         DataModel dataModel = response.body();
                         DataModel.Data data = dataModel.data;
 
-                        recordMutableLiveData.setValue(data.records);
+                        List<DataModel.Record> recordList = data.records;
+
+                        mikoRepository.isRowIsExist(recordList);
+
+                        /*if (recordList != null && recordList.size() > 0) {
+                            for (int i = 0; i < recordList.size(); i++) {
+
+                                Miko miko = new Miko();
+                                miko.setTitle(recordList.get(i).title);
+                                miko.setShortDescription(recordList.get(i).shortDescription);
+                                miko.setCollectedValue(recordList.get(i).collectedValue);
+                                miko.setTotalValue(recordList.get(i).totalValue);
+                                miko.setStartDate(recordList.get(i).startDate);
+                                miko.setEndDate(recordList.get(i).endDate);
+                                miko.setMainImageURL(recordList.get(i).mainImageURL);
+
+                                mikoRepository.insert(miko);
+
+                            }
+                        }*/
+
+                        /*recordMutableLiveData.setValue(mikoDao.getRecords());*/
 
                     }
                 }
@@ -47,6 +83,11 @@ public class MainActivityViewModel extends ViewModel {
         } catch (Exception e) {
             Log.i(TAG, e.getMessage());
         }
+    }
+
+
+    public LiveData<List<Miko>> getAllRecords() {
+        return allRecords;
     }
 
 }

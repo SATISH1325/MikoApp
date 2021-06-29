@@ -14,19 +14,16 @@ import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.professional.mikoapp.R;
-import com.professional.mikoapp.model.DataModel;
+import com.professional.mikoapp.repository.Miko;
 import com.professional.mikoapp.utilities.Utilities;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.List;
 
 public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecyclerViewHolder> {
 
     private Context context;
 
-    private ArrayList<DataModel.Record> dataList;
+    private List<Miko> dataList;
 
     private CustomRecyclerViewHolder customRecyclerViewHolder;
 
@@ -36,7 +33,7 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecycl
 
     private ImageLoader imageLoader;
 
-    public CustomRecyclerViewAdapter(Context context, ArrayList<DataModel.Record> dataList) {
+    public CustomRecyclerViewAdapter(Context context, List<Miko> dataList) {
         this.context = context;
         this.dataList = dataList;
 
@@ -63,16 +60,13 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecycl
 
         if (dataList != null && dataList.size() > 0) {
 
-            DataModel.Record currentItem = dataList.get(position);
+            Miko currentItem = dataList.get(position);
 
-            holder.tv_title.setText(currentItem.title);
-            holder.tv_shortDescription.setText(currentItem.shortDescription);
-            holder.tv_fundedAmt.setText(String.valueOf(currentItem.collectedValue));
-            holder.tv_goalsAmt.setText(String.valueOf(currentItem.totalValue));
-            holder.tv_endsInDuration.setText(Utilities.getDaysDifference(currentItem.startDate, currentItem.endDate));
-            /*Glide.with(context)
-                    .load(currentItem.mainImageURL)
-                    .into(holder.iv_image);*/
+            holder.tv_title.setText(currentItem.getTitle());
+            holder.tv_shortDescription.setText(currentItem.getShortDescription());
+            holder.tv_fundedAmt.setText(String.valueOf(currentItem.getCollectedValue()));
+            holder.tv_goalsAmt.setText(String.valueOf(currentItem.getTotalValue()));
+            holder.tv_endsInDuration.setText(Utilities.getDaysDifference(currentItem.getStartDate(), currentItem.getEndDate()));
 
             displayImageOptions = new DisplayImageOptions.Builder()
                     .showImageOnLoading(R.drawable.ic_launcher_foreground)
@@ -81,7 +75,7 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecycl
                     .cacheOnDisk(true)
                     .build();
 
-            imageLoader.displayImage(currentItem.mainImageURL, holder.iv_image, displayImageOptions);
+            imageLoader.displayImage(currentItem.getMainImageURL(), holder.iv_image, displayImageOptions);
 
         }
 

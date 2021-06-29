@@ -1,6 +1,7 @@
 package com.professional.mikoapp.view;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,18 +14,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.professional.mikoapp.R;
-import com.professional.mikoapp.model.DataModel;
-import com.professional.mikoapp.network.APIClient;
-import com.professional.mikoapp.network.ApiInterface;
+import com.professional.mikoapp.repository.Miko;
 import com.professional.mikoapp.utilities.Utilities;
 import com.professional.mikoapp.viewModel.MainActivityViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,13 +29,13 @@ public class MainActivity extends AppCompatActivity {
 
     private CustomRecyclerViewAdapter customRecyclerViewAdapter;
 
-    private ArrayList<DataModel.Record> dataModelArrayList;
+    private List<Miko> dataModelArrayList;
 
     private ProgressBar progress_circular;
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private MainActivityViewModel mainActivityViewModel;
+    MainActivityViewModel mainActivityViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,19 +65,20 @@ public class MainActivity extends AppCompatActivity {
 
         try {
 
+            progress_circular.setVisibility(View.VISIBLE);
+
             if (Utilities.isNetworkAvailable(this)) {
 
                 if (mainActivityViewModel != null) {
                     mainActivityViewModel.loadData();
                 }
 
-                successResponse();
-                failureResponse();
-
             } else {
                 Toast.makeText(this, "Network Unavailable", Toast.LENGTH_SHORT).show();
-                progress_circular.setVisibility(View.GONE);
             }
+
+            displayData();
+
 
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
@@ -90,13 +86,33 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void successResponse() {
-        try {
-            mainActivityViewModel.recordMutableLiveData.observe(this, records -> {
+    private void displayData() {
+
+        mainActivityViewModel.getAllRecords().observe(this, new Observer<List<Miko>>() {
+            @Override
+            public void onChanged(List<Miko> recordList) {
                 dataModelArrayList = new ArrayList<>();
 
-                if (records != null && records.size() > 0) {
-                    dataModelArrayList.addAll(records);
+                if (recordList != null && recordList.size() > 0) {
+                    dataModelArrayList = recordList;
+                    customRecyclerViewAdapter = new CustomRecyclerViewAdapter(MainActivity.this, dataModelArrayList);
+                    rv_recordList.setAdapter(customRecyclerViewAdapter);
+                    tv_emptyMessage.setVisibility(View.GONE);
+                } else {
+                    tv_emptyMessage.setVisibility(View.VISIBLE);
+                }
+
+                progress_circular.setVisibility(View.GONE);
+            }
+        });
+
+
+        /*try {
+            mainActivityViewModel.recordMutableLiveData.observe(this, recordList -> {
+                dataModelArrayList = new ArrayList<>();
+
+                if (recordList != null && recordList.size() > 0) {
+                    dataModelArrayList = recordList;
                     customRecyclerViewAdapter = new CustomRecyclerViewAdapter(MainActivity.this, dataModelArrayList);
                     rv_recordList.setAdapter(customRecyclerViewAdapter);
                     tv_emptyMessage.setVisibility(View.GONE);
@@ -108,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
             });
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
-        }
+        }*/
     }
 
     private void failureResponse() {
@@ -123,43 +139,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadData() {
-        try {
-            Call<DataModel> call = APIClient.getClient().fetchData();
-            call.enqueue(new Callback<DataModel>() {
-                @Override
-                public void onResponse(Call<DataModel> call, Response<DataModel> response) {
-                    if (response != null && response.isSuccessful()) {
-                        Log.i("Response", "Success" + response.body());
-                        DataModel dataModel = response.body();
-                        DataModel.Data data = dataModel.data;
-
-                        List<DataModel.Record> recordsList = data.records;
-                        dataModelArrayList = new ArrayList<>();
-
-                        if (recordsList != null && recordsList.size() > 0) {
-                            dataModelArrayList.addAll(recordsList);
-                            customRecyclerViewAdapter = new CustomRecyclerViewAdapter(MainActivity.this, dataModelArrayList);
-                            rv_recordList.setAdapter(customRecyclerViewAdapter);
-                            tv_emptyMessage.setVisibility(View.GONE);
-                        } else {
-                            tv_emptyMessage.setVisibility(View.VISIBLE);
-                        }
-
-                    }
-
-                    progress_circular.setVisibility(View.GONE);
-
-                }
-
-                @Override
-                public void onFailure(Call<DataModel> call, Throwable t) {
-                    Log.i("Response", "Failure response" + t.getMessage());
-                    progress_circular.setVisibility(View.GONE);
-                }
-            });
-        } catch (Exception e) {
-            Log.i(TAG, e.getMessage());
-        }
-    }
 }
