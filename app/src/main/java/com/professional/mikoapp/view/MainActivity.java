@@ -1,6 +1,7 @@
 package com.professional.mikoapp.view;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -16,6 +17,7 @@ import com.professional.mikoapp.model.DataModel;
 import com.professional.mikoapp.network.APIClient;
 import com.professional.mikoapp.network.ApiInterface;
 import com.professional.mikoapp.utilities.Utilities;
+import com.professional.mikoapp.viewModel.MainActivityViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progress_circular;
 
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    private MainActivityViewModel mainActivityViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +64,21 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         rv_recordList.setLayoutManager(layoutManager);
 
+        /*Instantiate ViwModel*/
+
+        mainActivityViewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+
         try {
 
             if (Utilities.isNetworkAvailable(this)) {
-                loadData();
+
+                if (mainActivityViewModel != null) {
+                    mainActivityViewModel.loadData();
+                }
+
+                successResponse();
+                failureResponse();
+
             } else {
                 Toast.makeText(this, "Network Unavailable", Toast.LENGTH_SHORT).show();
                 progress_circular.setVisibility(View.GONE);
@@ -73,6 +88,39 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, e.getMessage());
         }
 
+    }
+
+    private void successResponse() {
+        try {
+            mainActivityViewModel.recordMutableLiveData.observe(this, records -> {
+                dataModelArrayList = new ArrayList<>();
+
+                if (records != null && records.size() > 0) {
+                    dataModelArrayList.addAll(records);
+                    customRecyclerViewAdapter = new CustomRecyclerViewAdapter(MainActivity.this, dataModelArrayList);
+                    rv_recordList.setAdapter(customRecyclerViewAdapter);
+                    tv_emptyMessage.setVisibility(View.GONE);
+                } else {
+                    tv_emptyMessage.setVisibility(View.VISIBLE);
+                }
+
+                progress_circular.setVisibility(View.GONE);
+            });
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    private void failureResponse() {
+        try {
+
+            mainActivityViewModel.recordMutableLiveDataFailureResponse.observe(this, error -> {
+                progress_circular.setVisibility(View.GONE);
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 
     private void loadData() {
