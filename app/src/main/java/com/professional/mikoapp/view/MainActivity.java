@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<DataModel.Record> dataModelArrayList;
 
+    private ProgressBar progress_circular;
+
     private static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
@@ -51,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
         dataModelArrayList = new ArrayList<>();
 
+        progress_circular = findViewById(R.id.progress_circular);
+        progress_circular.setVisibility(View.VISIBLE);
+
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
         rv_recordList.setLayoutManager(layoutManager);
 
@@ -60,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 loadData();
             } else {
                 Toast.makeText(this, "Network Unavailable", Toast.LENGTH_SHORT).show();
+                progress_circular.setVisibility(View.GONE);
             }
 
         } catch (Exception e) {
@@ -93,11 +100,14 @@ public class MainActivity extends AppCompatActivity {
 
                     }
 
+                    progress_circular.setVisibility(View.GONE);
+
                 }
 
                 @Override
                 public void onFailure(Call<DataModel> call, Throwable t) {
                     Log.i("Response", "Failure response" + t.getMessage());
+                    progress_circular.setVisibility(View.GONE);
                 }
             });
         } catch (Exception e) {
